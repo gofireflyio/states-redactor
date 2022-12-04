@@ -1,0 +1,105 @@
+name: On-prem image CI/CD
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'components/crawler/**'
+      - 'pkg/**'
+      - 'go.mod'
+      - 'go.sum'
+  workflow_dispatch:
+    inputs:
+      dest:
+        description: 'Environment to deploy [stag|prod]'
+        required: true
+        default: 'stag'
+
+env:
+  CRAWLER_ECR_REPO: 'iacathon-crawler-on-prem'
+  TEST_TYPE: 'images'
+  TERRAFORM_PROVIDERS_FOLDER: '${{ github.workspace }}/providers'
+  GITLEAKS_CONFIG_PATH: '${{ github.workspace }}/gitleaks.toml'
+
+jobs:
+  tests:
+    name: Run Tests
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Configure git for private modules
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - run: ./scripts/download-provider.sh aws linux amd64 hashicorp 4.8.0
+      - run: ./scripts/download-provider.sh kubernetes linux amd64 hashicorp 2.11.0
+      - run: ./scripts/download-provider.sh akamai linux amd64 akamai 2.0.0
+      - run: ./scripts/download-provider.sh datadog linux amd64 datadog 3.11.0
+      - run: ./scripts/download-provider.sh github linux amd64 integrations 4.26.1
+      - run: ./scripts/download-provider.sh google linux amd64 hashicorp 4.24.0
+      - run: ./scripts/download-provider.sh okta linux amd64 okta 3.11.0
+      - run: ./scripts/download-provider.sh newrelic linux amd64 newrelic 2.47.1
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.18.3'
+      - run: go test ./pkg/...
+      - run: go test ./lambdas/...
+      - run: go test ./components/crawler/...
+  staging-images-new:
+    name: Build and push new staging docker image
+    needs: tests
+    runs-on: 'ubuntu-latest'
+    if: (github.event_name == 'workflow_dispatch' && github.event.inputs.dest == 'stag')
+    steps:
+      - name: Set Environment - Staging
+        run: |
+          echo "AWS_REGION=${{ secrets.NEW_STAG_REGION }}" >> $GITHUB_ENV
+          echo "ENV=stag" >> $GITHUB_ENV
+      - uses: actions/checkout@v2
+      - name: Configure git for private modules
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - name: Configure AWS credentials for staging
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.CI_STAG_CRED_KEY }}
+          aws-secret-access-key: ${{ secrets.CI_STAG_CRED_SECRET }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Amazon ECR "Login" Action for GitHub Actions
+        uses: aws-actions/amazon-ecr-login@v1
+        id: login-ecr
+      - name: Set output
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+      - name: Build and push image to ECR
+        env:
+          GOPRIVATE: "github.com/infralight/*"
+          RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
+        run: make docker-build-images publish-images GIT_WORKSPACE=${{ github.workspace }} GIT_HASH=${GITHUB_SHA::6} GITLEAKS_FILE_PATH=s3://gofirefly-stag-gitleaks-configuration/gitleaks.toml VERSION=${{ steps.vars.outputs.tag }} CRAWLER_IMAGE=${{ steps.login-ecr.outputs.registry }}/${{ env.CRAWLER_ECR_REPO }} ACCESS_TOKEN_USR=eran-infralight ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
+  production-images:
+    name: Build and push production docker image
+    needs: tests
+    runs-on: 'ubuntu-latest'
+    if: (github.event_name == 'workflow_dispatch' && github.event.inputs.dest == 'prod')
+    steps:
+      - name: Set Environment - Production
+        run: |
+          echo "AWS_REGION=${{ secrets.PROD_REGION }}" >> $GITHUB_ENV
+          echo "ENV=prod" >> $GITHUB_ENV
+      - uses: actions/checkout@v2
+      - name: Configure git for private modules
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - name: Configure AWS credentials for staging
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.CI_PROD_CRED_KEY }}
+          aws-secret-access-key: ${{ secrets.CI_PROD_CRED_SECRET }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Amazon ECR "Login" Action for GitHub Actions
+        uses: aws-actions/amazon-ecr-login@v1
+        id: login-ecr-prod
+      - name: Set output
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+      - name: Build and push image to ECR
+        env:
+          GOPRIVATE: "github.com/infralight/*"
+          RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
+        run: make docker-build-images publish-images GIT_WORKSPACE=${{ github.workspace }} GIT_HASH=${GITHUB_SHA::6} GITLEAKS_FILE_PATH=s3://prod-gitleaks-configuration/gitleaks.toml VERSION=${{ steps.vars.outputs.tag }} CRAWLER_IMAGE=${{ steps.login-ecr-prod.outputs.registry }}/${{ env.CRAWLER_ECR_REPO }} ACCESS_TOKEN_USR=eran-infralight ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
