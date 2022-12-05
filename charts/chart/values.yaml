@@ -43,10 +43,16 @@ resources:
     memory: 256Mi
     ephemeralStorage: 256Mi
 
+logging:
+  appLogPath: "/var/tmp"
+  logFile: "crawler.log"
+
+  s3Bucket: "gofirefly-stag-customer-logs3"
+  s3Region: "eu-west-1"
+  s3BucketPath: "9SyZMbriW0wp8qsfwZcu0a7GrjeALQc1Cz8NeyRxxiqL7zxQ9TBWWRI6OOOq"
+
+
 firefly:
-  logging_s3_bucket: ""
-  logging_s3_region: ""
-  logging_s3_bucket_path: ""
   accountId: ""
   crawlerId: ""
   # The remote Terraform state files service to get data from
@@ -71,6 +77,3 @@ redactorMirrorBucketRegion: ""
 
 rbac:
   create: true
-
-logging:
-  logPath: "/var/tmp/crawler.log"
