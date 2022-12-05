@@ -1,5 +1,7 @@
 # states-redactor
 
+## Overview
+
 The Firefly states redactor is a self hosted Kubernetes CronJob that fetches terraform state files from a remote source to a S3 bucket.
 State files can contain sevsitive data, as a result the redactor reads the state files, identifies the sensitive data and replaces it.
 The supported remote services:
@@ -27,6 +29,8 @@ The redaction is for the following terraform providers (`Sensitive` attributes):
 
 **In any case**, the redactor uses [Gitleaks](https://github.com/zricethezav/gitleaks) on every resource in order to enhance and make sure no secrets being written to mirror S3 bucket.
 
+## Architecture
+<img width="721" alt="image" src="https://user-images.githubusercontent.com/31516429/205700568-3197fb4e-84ff-45a1-8693-fc82685bba85.png">
 The CronJob runs every 2 hours by default. The CronJob is designed to run on an EKS cluster since it relays on the `eks.amazonaws.com/role-arn` annotation. The role must have an OpenID trust relationship and must grant:
 * s3:GetBucket - for target bucket
 * s3:ListBucket - to list objects under the target bucket
@@ -34,8 +38,15 @@ The CronJob runs every 2 hours by default. The CronJob is designed to run on an 
 * s3:PutObject - to put new object (suffixes: `.tfstate`, `.jsonl`)
 * (Optional) kms:Decrypt - if the bucket is encrypted.
 
+## Quick Start
 
-An example values:
+Run the following command
+```bash
+helm repo add firefly-redactor https://gofireflyio.github.io/states-redactor
+helm install states-redactor firefly-redactor/firefly-redactor -f values.yaml --namespace=firefly --create-namespace
+```
+
+An example of `values.yaml`:
 ```yaml
 serviceAccount:
   annotations: {
