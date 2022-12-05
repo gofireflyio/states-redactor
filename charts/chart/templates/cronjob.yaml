@@ -27,6 +27,8 @@ spec:
                   value: {{ .Values.redactorMirrorBucketName }}
                 - name: AWS_REGION
                   value: {{ .Values.redactorMirrorBucketRegion }}
+                - name: LOCAL_LOG_PATH
+                  value: {{ .Values.logging.log_path }}
               envFrom:
                 - secretRef:
                     name: {{ .Release.Name }}-credentials
