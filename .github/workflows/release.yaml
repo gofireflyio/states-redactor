@@ -7,7 +7,6 @@ on:
     paths-ignore:
       - '.github/**'      
   workflow_dispatch:
-  
 jobs:
   release:
     runs-on: ubuntu-latest
