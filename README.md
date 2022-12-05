@@ -23,6 +23,8 @@ The redaction is for the following terraform providers (`Sensitive` attributes):
 
 :white_check_mark: [Github](https://registry.terraform.io/providers/integrations/github)
 
+:white_check_mark: [Okta](https://registry.terraform.io/providers/okta/okta)
+
 **In any case**, the redactor uses [Gitleaks](https://github.com/zricethezav/gitleaks) on every resource in order to enhance and make sure no secrets being written to mirror S3 bucket.
 
 The Cron Job runs every 2 hours by default. The Cron Job is designed to run on an EKS cluster since it relays on the `eks.amazonaws.com/role-arn` annotation. The role must have an OpenID trust relationship and must grant:
