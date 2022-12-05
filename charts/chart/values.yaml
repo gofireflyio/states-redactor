@@ -71,3 +71,6 @@ redactorMirrorBucketRegion: ""
 
 rbac:
   create: true
+
+logging:
+  logPath: "/var/tmp/crawler.log"

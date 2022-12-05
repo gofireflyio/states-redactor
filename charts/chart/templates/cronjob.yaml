@@ -27,6 +27,8 @@ spec:
                   value: {{ .Values.redactorMirrorBucketName }}
                 - name: AWS_REGION
                   value: {{ .Values.redactorMirrorBucketRegion }}
+                - name: LOCAL_LOG_PATH
+                  value: {{ .Values.logging.logPath }}
               envFrom:
                 - secretRef:
                     name: {{ .Release.Name }}-credentials
@@ -50,7 +52,7 @@ spec:
               imagePullPolicy: {{ .Values.image.pullPolicy }}
               volumeMounts:
                 - name: shared-volume
-                  mountPath: "{{ .Values.logging.log_path }}"
+                  mountPath: "{{ .Values.logging.logPath }}"
                 - name: config-fluentd
                   mountPath: "/fluentd/etc/fluent.conf"
                   subPath: "fluent.conf"
