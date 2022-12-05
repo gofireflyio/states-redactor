@@ -1,0 +1,50 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-cronjob
+spec:
+  schedule: "{{ .Values.schedule }}"
+  concurrencyPolicy: "Forbid"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: {{ .Values.serviceAccount.name }}
+          containers:
+            - name: {{ .Release.Name }}
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              env:
+                - name: FIREFLY_ACCOUNT_ID
+                  value: {{ .Values.firefly.accountId }}
+                - name: FIREFLY_CRAWLER_ID
+                  value: {{ .Values.firefly.crawlerId }}
+                - name: LOCAL_CRAWLER_PATH
+                  value: "{{ .Values.crawlerLocalPath }}/crawler.json"
+                - name: SAAS_MODE
+                  value: "false"
+                - name: STATES_BUCKET
+                  value: {{ .Values.redactorMirrorBucketName }}
+                - name: AWS_REGION
+                  value: {{ .Values.redactorMirrorBucketRegion }}
+              envFrom:
+                - secretRef:
+                    name: {{ .Release.Name }}-credentials
+              volumeMounts:
+                - name: config-volume
+                  mountPath: "{{ .Values.crawlerLocalPath}}/crawler.json"
+                  subPath: "crawler.json"
+              resources:
+                requests:
+                  cpu: {{ .Values.resources.requests.cpu }}
+                  memory: {{ .Values.resources.requests.memory }}
+                  ephemeral-storage: {{ .Values.resources.requests.ephemeralStorage}}
+                limits:
+                  cpu: {{ .Values.resources.limits.cpu }}
+                  memory: {{ .Values.resources.limits.memory }}
+                  ephemeral-storage: {{ .Values.resources.requests.ephemeralStorage}}
+          volumes:
+            - name: config-volume
+              configMap:
+                name: {{ .Release.Name }}-config
+          restartPolicy: OnFailure

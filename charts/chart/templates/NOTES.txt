@@ -1,0 +1,7 @@
+Thank you for installing the Firefly On-Prem Redactor (version: {{ .Chart.AppVersion }}).
+The redactor is implemented as a Kubernetes CronJob that is executed
+based on your chosen schedule (or every 2 hours by default), and
+crawls for terraform state files from a remote source
+(Terraform Cloud, Google Cloud Storage, Amazon S3, Hashicorp Consul),
+redacts all sensitive information from the state files.
+Finally, the redactor saves the redacted state files in a mirror Amazon S3 Bucket.
