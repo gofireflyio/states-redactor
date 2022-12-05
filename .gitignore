@@ -7,7 +7,6 @@
 *.out
 .idea/
 .DS_Store
-.github
 bin/
 registry.terraform.io
 .env
