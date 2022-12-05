@@ -31,6 +31,7 @@ The redaction is for the following terraform providers (`Sensitive` attributes):
 
 ## Architecture
 <img width="721" alt="image" src="https://user-images.githubusercontent.com/31516429/205700568-3197fb4e-84ff-45a1-8693-fc82685bba85.png">
+
 The CronJob runs every 2 hours by default. The CronJob is designed to run on an EKS cluster since it relays on the `eks.amazonaws.com/role-arn` annotation. The role must have an OpenID trust relationship and must grant:
 * s3:GetBucket - for target bucket
 * s3:ListBucket - to list objects under the target bucket
