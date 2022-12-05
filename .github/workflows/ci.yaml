@@ -1,13 +1,10 @@
-name: On-prem image CI/CD
+name: Dockerhub
 
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'components/crawler/**'
-      - 'pkg/**'
-      - 'go.mod'
-      - 'go.sum'
+    paths-ignore:
+      - '.github/**'
   workflow_dispatch:
     inputs:
       collectortag:
@@ -21,30 +18,8 @@ env:
   GITLEAKS_CONFIG_PATH: '${{ github.workspace }}/gitleaks.toml'
 
 jobs:
-  tests:
-    name: Run Tests
-    runs-on: 'ubuntu-latest'
-    steps:
-      - uses: actions/checkout@v2
-      - name: Configure git for private modules
-        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
-      - run: ./scripts/download-provider.sh aws linux amd64 hashicorp 4.8.0
-      - run: ./scripts/download-provider.sh kubernetes linux amd64 hashicorp 2.11.0
-      - run: ./scripts/download-provider.sh akamai linux amd64 akamai 2.0.0
-      - run: ./scripts/download-provider.sh datadog linux amd64 datadog 3.11.0
-      - run: ./scripts/download-provider.sh github linux amd64 integrations 4.26.1
-      - run: ./scripts/download-provider.sh google linux amd64 hashicorp 4.24.0
-      - run: ./scripts/download-provider.sh okta linux amd64 okta 3.11.0
-      - run: ./scripts/download-provider.sh newrelic linux amd64 newrelic 2.47.1
-      - uses: actions/setup-go@v2
-        with:
-          go-version: '1.18.3'
-      - run: go test ./pkg/...
-      - run: go test ./lambdas/...
-      - run: go test ./components/crawler/...
   dockerhub-build:
     name: Build and push dockerhub
-    needs: tests
     runs-on: 'ubuntu-latest'
     steps:
     - uses: actions/checkout@v2
