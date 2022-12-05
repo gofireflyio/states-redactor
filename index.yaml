@@ -1,0 +1,16 @@
+apiVersion: v1
+entries:
+  firefly-redactor:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2022-12-05T16:41:04.04672389Z"
+    description: A Helm chart for Kubernetes to use the Firefly On-Prem state files
+      redactor
+    digest: 55a2e57825fc9a6b4ab722f0676b89929b40941db755f0bf1db36659def459d2
+    home: github.com/infralight/iac-states
+    name: firefly-redactor
+    type: application
+    urls:
+    - https://github.com/gofireflyio/states-redactor/releases/download/firefly-redactor-0.2.0/firefly-redactor-0.2.0.tgz
+    version: 0.2.0
+generated: "2022-12-05T16:41:04.04672869Z"
