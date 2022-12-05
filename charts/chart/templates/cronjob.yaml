@@ -31,8 +31,10 @@ spec:
                 - secretRef:
                     name: {{ .Release.Name }}-credentials
               volumeMounts:
+                - name: shared-volume
+                  mountPath: {{ .Values.crawlerLocalPath }}
                 - name: config-volume
-                  mountPath: "{{ .Values.crawlerLocalPath}}/crawler.json"
+                  mountPath: "{{ .Values.crawlerLocalPath }}/crawler.json"
                   subPath: "crawler.json"
               resources:
                 requests:
@@ -43,8 +45,31 @@ spec:
                   cpu: {{ .Values.resources.limits.cpu }}
                   memory: {{ .Values.resources.limits.memory }}
                   ephemeral-storage: {{ .Values.resources.requests.ephemeralStorage}}
+            - name: fluentd
+              image: fluent/fluentd
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              volumeMounts:
+                - name: shared-volume
+                  mountPath: "{{ .Values.logging.log_path }}"
+                - name: config-fluentd
+                  mountPath: "/fluentd/etc/fluent.conf"
+                  subPath: "fluent.conf"
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 256Mi
+                  ephemeral-storage: {{ .Values.resources.requests.ephemeralStorage}}
+                limits:
+                  cpu: 100m
+                  memory: 512Mi
+                  ephemeral-storage: {{ .Values.resources.requests.ephemeralStorage}}
           volumes:
             - name: config-volume
               configMap:
                 name: {{ .Release.Name }}-config
+            - name: config-fluentd
+              configMap:
+                name: {{ .Release.Name }}-fluentd
+            - name: shared-volume
+              emptyDir: {}
           restartPolicy: OnFailure

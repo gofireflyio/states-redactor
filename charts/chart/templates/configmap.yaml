@@ -1,6 +1,47 @@
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-config
 data:
   "crawler.json": {{ .Values.firefly | toJson | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-fluentd
+data:
+  "fluent.conf": |
+    <source>
+    @type tail
+    path {{ .Values.logging.log_path }}
+    pos_file {{ .Values.logging.log_path }}.pos
+    tag crawler
+    <parse>
+    @type json
+    </parse>
+    </source>
+    <match **>
+    @type s3
+    s3_bucket {{ .Values.logging.s3_bucket }}
+    s3_region {{ .Values.logging.s3_region }}
+    s3_object_key_format "${path}/%{time_slice}-logs_%{index}.%{file_extension}"
+    time_slice_format %Y/%m/%d/%H
+    time_slice_wait 1m
+    path {{ .Values.logging.s3_bucket_path }}
+    # if you want to use ${tag} or %Y/%m/%d/ like syntax in path / s3_object_key_format,
+    # need to specify tag for ${tag} and time for %Y/%m/%d in <buffer> argument.
+    <buffer tag,time>
+    @type file
+    flush_mode interval
+    flush_interval 5s
+    path /var/tmp/s3
+    timekey 10s # 1 hour partition
+    timekey_wait 5s
+    timekey_use_utc true # use utc
+    chunk_limit_size 100m
+    </buffer>
+    <format>
+    @type json
+    </format>
+    </match>
