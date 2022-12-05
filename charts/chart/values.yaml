@@ -59,7 +59,8 @@ firefly:
 credentials: { }
   # The credentials to the remote Terraform state files service
   # credentials:
-#   IACATHON_TFC_TOKEN: "example"
+  #   tfcToken: "example"
+  #   tfcCustomDomain: "example.com"
 
 crawlerLocalPath: "/var/tmp"
 redactorMirrorBucketName: ""
