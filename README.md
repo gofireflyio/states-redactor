@@ -55,8 +55,8 @@ serviceAccount:
      "eks.amazonaws.com/role-arn": aws:aws:iam::123456789:role/my-role
   }
 firefly:
-  accountId: ID-GIVEN-BY-FIREFLY
-  crawlerId: ID-GIVEN-BY-FIREFLY
+  accountId: GIVEN-BY-FIREFLY
+  crawlerId: GIVEN-BY-FIREFLY
   location:
     tfc:
       organization: example
@@ -69,4 +69,6 @@ credentials:
 
 redactorMirrorBucketName: my-mirror-bucket
 redactorMirrorBucketRegion: us-east-1
+logging:
+  remoteHash: GIVEN-BY-FIREFLY
 ```
