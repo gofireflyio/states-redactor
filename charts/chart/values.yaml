@@ -45,6 +45,7 @@ resources:
 
 logging:
   remoteHash: ""
+  appLogPath: "/var/tmp"
   logFile: "crawler.log"
 
 
