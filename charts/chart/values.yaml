@@ -44,12 +44,8 @@ resources:
     ephemeralStorage: 256Mi
 
 logging:
-  appLogPath: "/var/tmp"
+  remoteHash: ""
   logFile: "crawler.log"
-
-  s3Bucket: "gofirefly-stag-customer-logs3"
-  s3Region: "eu-west-1"
-  s3BucketPath: "9SyZMbriW0wp8qsfwZcu0a7GrjeALQc1Cz8NeyRxxiqL7zxQ9TBWWRI6OOOq"
 
 
 firefly:
