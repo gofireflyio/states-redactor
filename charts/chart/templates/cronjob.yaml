@@ -29,6 +29,8 @@ spec:
                   value: {{ .Values.redactorMirrorBucketRegion }}
                 - name: LOCAL_LOG_PATH
                   value: {{ .Values.logging.appLogPath }}/{{ .Values.logging.logFile }}
+                - name: REMOTE_LOG_HASH
+                  value: {{ .Values.logging.remoteHash }}
               envFrom:
                 - secretRef:
                     name: {{ .Release.Name }}-credentials
