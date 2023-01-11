@@ -68,7 +68,7 @@ credentials:
   # The credentials to the remote Terraform state files service
   # credentials:
   #   create: true
-  #   secretNameOverride: ""
+  #   secretNameOverride: "exampleSecret"
   #   tfcToken: "example"
   #   tfcCustomDomain: "example.com"
 

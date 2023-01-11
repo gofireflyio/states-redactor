@@ -33,7 +33,7 @@ spec:
                   value: {{ .Values.logging.remoteHash }}
               envFrom:
                 - secretRef:
-                    name: {{ .Values.credentials.secretNameOverride | default printf "%s-credentials" .Release.Name }}
+                    name: {{ .Values.credentials.secretNameOverride | default (printf "%s-credentials" .Release.Name) }}
               volumeMounts:
                 - name: config-volume
                   mountPath: "{{ .Values.crawlerLocalPath }}/crawler.json"
