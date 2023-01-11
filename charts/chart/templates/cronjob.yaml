@@ -31,9 +31,13 @@ spec:
                   value: {{ .Values.logging.appLogPath }}/{{ .Values.logging.logFile }}
                 - name: REMOTE_LOG_HASH
                   value: {{ .Values.logging.remoteHash }}
+                {{- if .Values.tfcCustomDomain }}
+                - name: IACATHON_TFC_CUSTOM_DOMAIN
+                  value: {{ .Values.tfcCustomDomain }}
+                {{- end }}
               envFrom:
                 - secretRef:
-                    name: {{ .Release.Name }}-credentials
+                    name: {{ .Values.credentials.secretNameOverride | default (printf "%s-credentials" .Release.Name) }}
               volumeMounts:
                 - name: config-volume
                   mountPath: "{{ .Values.crawlerLocalPath }}/crawler.json"
