@@ -62,9 +62,13 @@ firefly:
   # The remote service type: (tfc for Terraform Cloud)
   type: ""
 
-credentials: { }
+credentials:
+  create: true
+  secretNameOverride: ""
   # The credentials to the remote Terraform state files service
   # credentials:
+  #   create: true
+  #   secretNameOverride: ""
   #   tfcToken: "example"
   #   tfcCustomDomain: "example.com"
 
