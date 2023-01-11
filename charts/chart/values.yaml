@@ -62,6 +62,9 @@ firefly:
   # The remote service type: (tfc for Terraform Cloud)
   type: ""
 
+
+tfcCustomDomain: ""
+
 credentials:
   create: true
   secretNameOverride: ""
@@ -70,7 +73,6 @@ credentials:
   #   create: true
   #   secretNameOverride: "exampleSecret"
   #   tfcToken: "example"
-  #   tfcCustomDomain: "example.com"
 
 crawlerLocalPath: "/var/tmp"
 redactorMirrorBucketName: ""
