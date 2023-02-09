@@ -7,7 +7,7 @@ State files can contain sevsitive data, as a result the redactor reads the state
 The supported remote services:
 | **Service**           | **Authentication**                                                | **Notes**                                                                                                                                  |
 |-----------------------|-------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
-| Terraform Cloud (tfc) | Use `tfcToken` in the `values.yaml` under `credentials` | If using terraform enterprise, add the `tfcCustomDomain` under `credentials` or add the `address` under `firefly.location.tfc`. Token can be either an organization token or teams token (for the specified workspaces). |
+| Terraform Cloud (tfc) | Use `tfcToken` in the `values.yaml` under `credentials` | If using terraform enterprise, add the `tfcCustomDomain` under `credentials` or add the `address` under `firefly.location.tfc`. The address must start with `http://` ot `https://`. Token can be either an organization token or teams token (for the specified workspaces). |
 
 The redaction is for the following terraform providers (`Sensitive` attributes):
 
@@ -65,7 +65,7 @@ firefly:
 
 credentials:
   tfcToken: MY-ORGANIZATION-TOKEN
-  tfcCustomDomain: example-tfc-enteprise.com
+  tfcCustomDomain: https://example-tfc-enteprise.com
 
 redactorMirrorBucketName: my-mirror-bucket
 redactorMirrorBucketRegion: us-east-1
