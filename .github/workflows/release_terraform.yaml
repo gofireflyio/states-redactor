@@ -6,56 +6,45 @@ on:
     branches:
       - main
     paths:
-      - 'terraform/**/*.py'
       - 'terraform/**/*.tf'
       - '.github/workflows/release_terraform.yml'
 
 jobs:
   release:
-    name: Release
-    runs-on: [self-hosted, production]
+    name: Tag Release
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Check out source code
+        uses: actions/checkout@v2
         with:
-          persist-credentials: false
           fetch-depth: 0
-
-      - name: setup node 16
-        uses: actions/setup-node@v3
+      - name: Bump version and push tag
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.0
         with:
-          node-version: 16
-      - name: Release
-        uses: cycjimmy/semantic-release-action@v2
-        id: semantic
+          release_branches: main
+          github_token: ${{ github.token }}
+          tag_prefix: v
+      - name: Create a GitHub release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: ncipollo/release-action@v1
         with:
-          working_directory: ./terraform/ecs
-          semantic_version: 18.0.0
-          extra_plugins: |
-            @semantic-release/changelog@6.0.0
-            @semantic-release/git@10.0.0
-            conventional-changelog-conventionalcommits@4.6.3
-        env:
-          GITHUB_TOKEN: ${{ secrets.SEMANTIC_RELEASE_TOKEN }}
-
-      - name: Set env current release
-        run: echo "RELEASE_VERSION=${{ steps.semantic.outputs.last_release_version }}" >> $GITHUB_ENV
-      - name: Set env new release if exist
-        if: steps.semantic.outputs.new_release_published == 'true'
-        run: echo "RELEASE_VERSION=${{ steps.semantic.outputs.new_release_version }}" >> $GITHUB_ENV
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+          tag: ${{ steps.tag_version.outputs.new_tag }}
+          name: Release ${{ steps.tag_version.outputs.new_tag }}
+          body: ${{ steps.tag_version.outputs.changelog }}
+      - name: Bump beta version and push tag
+        if: github.event_name == 'workflow_dispatch'
+        id: tag_version_branch
+        uses: mathieudutour/github-tag-action@v6.0
         with:
-          python-version: 3.8
-      - name: Save release in mongo
-        workdir: terraform/ecs
-        run: |
-          python -m venv test
-          source ./test/bin/activate
-          pip install -r requirements.txt
-          export PYTHONPATH="${PYTHONPATH}:${PWD}"
-          python post_release.py
-          deactivate
-        env:
-          PROD_MONGO_URI: ${{ secrets.PROD_MONGO_URI }}
-          TAG: ${{ env.RELEASE_VERSION }}
+          pre_release_branches: .*
+          github_token: ${{ github.token }}
+          tag_prefix: v
+      - name: Create a GitHub release
+        if: github.event_name == 'workflow_dispatch'
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.tag_version_branch.outputs.new_tag }}
+          name: Release ${{ steps.tag_version_branch.outputs.new_tag }}
+          body: ${{ steps.tag_version_branch.outputs.changelog }}
