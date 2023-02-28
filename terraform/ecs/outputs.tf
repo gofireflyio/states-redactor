@@ -1,5 +1,5 @@
-output "cluster_name" {
-  value = aws_ecs_cluster.this.name
+output "cluster_arn" {
+  value = var.ecs_cluster_arn == "" ? aws_ecs_cluster.this[0].arn : var.ecs_cluster_arn
 }
 
 output "task_definition_arn" {

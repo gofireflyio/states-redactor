@@ -73,3 +73,15 @@ variable "subnets" {
   type        = list(string)
   description = "A list of subnet IDs to launch an AWS resource in."
 }
+
+variable "assign_public_ip" {
+  type        = bool
+  default     = false
+  description = "Should the ECS task have public ip (for getting the remote ECR). If assigned to false, you should add VPC endpoint to ECR."
+}
+
+variable "ecs_cluster_arn" {
+  type        = string
+  default     = ""
+  description = "If ECS cluster already exists, use this one, otherwise if empty, create the cluster."
+}
