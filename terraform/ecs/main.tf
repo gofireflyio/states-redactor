@@ -56,8 +56,7 @@ resource "aws_iam_role_policy" "ecs_task_policy_redacted_bucket" {
       Resource = [
         "arn:aws:s3:::${var.redacted_bucket_name}",
         "arn:aws:s3:::${var.redacted_bucket_name}/*tfstate",
-        "arn:aws:s3:::${var.redacted_bucket_name}/*jsonl",
-        "arn:aws:s3:::${var.redacted_bucket_name}/*json"
+        "arn:aws:s3:::${var.redacted_bucket_name}/*jsonl"
       ]
     }]
   })
