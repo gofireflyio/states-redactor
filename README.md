@@ -83,6 +83,7 @@ module "states-redactor-ecs" {
 
   firefly_account_id = "<ACCOUNT_ID>"             // Given by Firefly
   firefly_crawler_id = "<CRAWLER_ID>"             // Given by Firefly
+  firefly_remote_log_hash = "<REMOTE_LOG_HASH>"   // Given by Firefly
 
   redacted_bucket_name = "tfstate-target-bucket"
   source_bucket_name = "tfstate-source-bucket"
