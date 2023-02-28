@@ -48,7 +48,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Save release in mongo
-        workdir: terraform/ecs
+        working-directory: terraform/ecs
         run: |
           python -m venv test
           source ./test/bin/activate
