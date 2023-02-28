@@ -72,3 +72,29 @@ redactorMirrorBucketRegion: us-east-1
 logging:
   remoteHash: GIVEN-BY-FIREFLY
 ```
+
+### Terraform ECS
+
+This module call will create a task definition that will run the states-redactor on ECS Fargate periodically.
+```
+module "states-redactor-ecs" {
+  source = "github.com/gofireflyio/states-redactor//terraform/ecs"
+  aws_region = "us-west-2"
+
+  firefly_account_id = "<ACCOUNT_ID>"             // Given by Firefly
+  firefly_crawler_id = "<CRAWLER_ID>"             // Given by Firefly
+
+  redacted_bucket_name = "tfstate-target-bucket"
+  source_bucket_name = "tfstate-source-bucket"
+  source_bucket_region = "us-west-2"
+
+  container_cpu = 256
+  container_memory = 512
+  schedule_expression = "rate(2 hours)"
+
+  security_groups = ["sg-1234"]
+  subnets = ["subnet-1234", "subnet-5678"]
+  assign_public_ip = false // If false, add VPC endpoints to reach the ECR
+  ecs_cluster_arn = "arn:aws:ecs:us-west-2:0123456789:cluster/firefly-states-redactor" // If empty, will create a cluster
+}
+```
