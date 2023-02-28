@@ -1,10 +1,10 @@
 locals {
-  firefly_prefix = "firefly-states-redactor-"
-  firefly_prefix_with_crawler = "${local.firefly_prefix}${substr(var.firefly_crawler_id, -4, 4)}"
+  firefly_prefix = "firefly-states-redactor"
+  firefly_prefix_with_crawler = "${local.firefly_prefix}-${substr(var.firefly_crawler_id, -4, 4)}"
 }
 
 resource "aws_iam_role" "ecs_task_role" {
-  name = "${local.firefly_prefix}ecs-task-role"
+  name = "${local.firefly_prefix_with_crawler}-ecs-task-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -19,7 +19,7 @@ resource "aws_iam_role" "ecs_task_role" {
 }
 
 resource "aws_iam_role_policy" "ecs_task_policy_source_bucket" {
-  name = "${local.firefly_prefix}ecs-task-policy-source-bucket"
+  name = "${local.firefly_prefix_with_crawler}-ecs-task-policy-source-bucket"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -30,6 +30,7 @@ resource "aws_iam_role_policy" "ecs_task_policy_source_bucket" {
       ]
       Effect = "Allow"
       Resource = [
+        "arn:aws:s3:::${var.source_bucket_name}",
         "arn:aws:s3:::${var.source_bucket_name}/*tfstate"
       ]
     }]
@@ -39,7 +40,7 @@ resource "aws_iam_role_policy" "ecs_task_policy_source_bucket" {
 }
 
 resource "aws_iam_role_policy" "ecs_task_policy_redacted_bucket" {
-  name = "${local.firefly_prefix}ecs-task-policy-redacted-bucket"
+  name = "${local.firefly_prefix_with_crawler}-ecs-task-policy-redacted-bucket"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -53,8 +54,10 @@ resource "aws_iam_role_policy" "ecs_task_policy_redacted_bucket" {
       ]
       Effect = "Allow"
       Resource = [
+        "arn:aws:s3:::${var.redacted_bucket_name}",
         "arn:aws:s3:::${var.redacted_bucket_name}/*tfstate",
-        "arn:aws:s3:::${var.redacted_bucket_name}/*jsonl"
+        "arn:aws:s3:::${var.redacted_bucket_name}/*jsonl",
+        "arn:aws:s3:::${var.redacted_bucket_name}/*json"
       ]
     }]
   })
@@ -63,7 +66,7 @@ resource "aws_iam_role_policy" "ecs_task_policy_redacted_bucket" {
 }
 
 resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "${local.firefly_prefix}ecs-task-execution-role"
+  name = "${local.firefly_prefix_with_crawler}-ecs-task-execution-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -87,7 +90,8 @@ data "aws_iam_role" "ecs_event_rule_role" {
 }
 
 resource "aws_ecs_cluster" "this" {
-  name = local.firefly_prefix_with_crawler
+  count = var.ecs_cluster_arn == "" ? 1 : 0
+  name = local.firefly_prefix
 }
 
 resource "aws_ecs_task_definition" "this" {
@@ -122,19 +126,11 @@ resource "aws_ecs_task_definition" "this" {
           },
           {
             name  = "LOCAL_CRAWLER_JSON"
-            value = "{\"_id\" : \"${var.firefly_crawler_id}\",\"accountId\" : \"${var.firefly_account_id}\",\"location\" : {    \"s3\" : {        \"bucket\" : \"${var.source_bucket_name}\",        \"region\" : \"${var.source_bucket_region}\"    }},\"type\" : \"s3\",\"active\" : true, \"fullMapInterval\" : 86400000000000,\"isAutoCreated\" : true,\"isDeleted\" : false,\"isEventDriven\" : false,\"isLocal\" : true,\"isScanForbidden\" : false,\"mainLocation\" : \"${var.source_bucket_name}\",\"remoteIntegrationName\" : \"\",\"rules\" : []}"
+            value = "{\"_id\" : \"${var.firefly_crawler_id}\",\"accountId\" : \"${var.firefly_account_id}\",\"location\" : {    \"s3\" : {        \"isLocal\" : true, \"bucket\" : \"${var.source_bucket_name}\",        \"region\" : \"${var.source_bucket_region}\"    }},\"type\" : \"s3\",\"active\" : true, \"fullMapInterval\" : 86400000000000,\"isAutoCreated\" : true,\"isLocal\" : true,\"mainLocation\" : \"${var.source_bucket_name}\"}"
           }
     ]
     memory                  = var.container_memory
     cpu                     = var.container_cpu
-#    logConfiguration = {
-#        "logDriver": "awslogs",
-#        "options": {
-#          "awslogs-group": "/ecs/example",
-#          "awslogs-region": "us-west-2",
-#          "awslogs-stream-prefix": "example"
-#        }
-#      }
   }])
 
   cpu                      = var.container_cpu
@@ -152,7 +148,7 @@ resource "aws_cloudwatch_event_rule" "this" {
 
 resource "aws_cloudwatch_event_target" "this" {
   rule     = aws_cloudwatch_event_rule.this.name
-  arn      = aws_ecs_cluster.this.arn
+  arn      = var.ecs_cluster_arn == "" ? aws_ecs_cluster.this[0].arn : var.ecs_cluster_arn
   role_arn = data.aws_iam_role.ecs_event_rule_role.arn
 
   ecs_target {
@@ -162,7 +158,7 @@ resource "aws_cloudwatch_event_target" "this" {
     platform_version        = "LATEST"
 
     network_configuration {
-      assign_public_ip = false
+      assign_public_ip = var.assign_public_ip
       security_groups  = var.security_groups
       subnets          = var.subnets
     }
