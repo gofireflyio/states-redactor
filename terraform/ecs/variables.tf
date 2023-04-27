@@ -85,3 +85,22 @@ variable "ecs_cluster_arn" {
   default     = ""
   description = "If ECS cluster already exists, use this one, otherwise if empty, create the cluster."
 }
+
+variable "cloudwatch_log_group_name" {
+  type = string
+  default = "firefly-on-prem-redactor"
+  description = "In case of blocking the shipment of remote logs to Firefly. We will save the logs to a local cloud watch group."
+}
+
+variable "cloudwatch_stream_prefix" {
+  type = string
+  default = "firefly"
+  description = "In case of blocking the shipment of remote logs to Firefly. We will save the logs to a local cloud watch group with that prefix."
+}
+
+variable "cloudwatch_should_create_log_group" {
+  type = bool
+  default = true
+  description = "In case of blocking the shipment of remote logs to Firefly. We will save the logs to a local cloud watch group. This vairable meant for creating or using an exist group."
+}
+
