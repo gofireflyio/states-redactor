@@ -64,6 +64,7 @@ firefly:
 
 
 tfcCustomDomain: ""
+argocdDomain: ""
 
 credentials:
   create: true
@@ -73,6 +74,7 @@ credentials:
   #   create: true
   #   secretNameOverride: "exampleSecret"
   #   tfcToken: "example"
+  #   argocdToken: "example"
 
 crawlerLocalPath: "/var/tmp"
 redactorMirrorBucketName: ""
