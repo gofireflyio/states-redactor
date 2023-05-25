@@ -65,6 +65,7 @@ firefly:
 
 tfcCustomDomain: ""
 argocdDomain: ""
+saveToRemoteBucket: false
 
 credentials:
   create: true
