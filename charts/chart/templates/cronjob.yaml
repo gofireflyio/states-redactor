@@ -38,6 +38,8 @@ spec:
                 { { - if .Values.argocdDomain } }
                 - name: IACATHON_ARGOCD_DOMAIN
                   value: { { .Values.argocdDomain } }
+                - name: REMOTE_BUCKET
+                  value: { { .Values.saveToRemoteBucket } }
                 { { - end } }
               envFrom:
                 - secretRef:
