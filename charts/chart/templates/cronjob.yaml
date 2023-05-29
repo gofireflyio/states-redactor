@@ -35,11 +35,11 @@ spec:
                 - name: IACATHON_TFC_CUSTOM_DOMAIN
                   value: {{ .Values.tfcCustomDomain }}
                 {{- end }}
-                { { - if .Values.argocdDomain } }
+                {{ - if .Values.argocdDomain }}
                 - name: IACATHON_ARGOCD_DOMAIN
-                  value: { { .Values.argocdDomain } }
+                  value: {{ .Values.argocdDomain }}
                 - name: REMOTE_BUCKET
-                  value: { { .Values.saveToRemoteBucket } }
+                  value: {{ .Values.saveToRemoteBucket | toString }}
                 { { - end } }
               envFrom:
                 - secretRef:
