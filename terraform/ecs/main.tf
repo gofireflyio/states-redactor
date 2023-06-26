@@ -129,7 +129,7 @@ resource "aws_iam_role" "ecs_task_execution_role" {
 
 resource "aws_iam_policy" "redactor_logs" {
   count       = var.firefly_remote_log_hash == "" ? 1 : 0
-  name        = "firefly_redactor_logs_policy"
+  name        = "${local.firefly_prefix_with_crawler}-redactor-logs-policy"
   path        = "/"
   description = "Firefly creates this polocy to enable the ecs to manage the states-redactor logs with cloudwatch"
   policy = jsonencode({
@@ -157,8 +157,24 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_attachment" {
   role       = aws_iam_role.ecs_task_execution_role.name
 }
 
-data "aws_iam_role" "ecs_event_rule_role" {
-  name = "ecsEventsRole"
+resource "aws_iam_role" "ecs_events_rule_role" {
+  name = "${local.firefly_prefix_with_crawler}-ecs-events-rule-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "events.amazonaws.com"
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_events_rule_role_attachment" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceEventsRole"
+  role       = aws_iam_role.ecs_events_rule_role.name
 }
 
 resource "aws_ecs_cluster" "this" {
@@ -186,7 +202,7 @@ resource "aws_cloudwatch_event_rule" "this" {
 resource "aws_cloudwatch_event_target" "this" {
   rule     = aws_cloudwatch_event_rule.this.name
   arn      = var.ecs_cluster_arn == "" ? aws_ecs_cluster.this[0].arn : var.ecs_cluster_arn
-  role_arn = data.aws_iam_role.ecs_event_rule_role.arn
+  role_arn = aws_iam_role.ecs_events_rule_role.arn
 
   ecs_target {
     task_count = 1
