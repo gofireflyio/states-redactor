@@ -15,9 +15,9 @@ jobs:
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
-        aws-access-key-id: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+        aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
+        aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
+        aws-region: ${{ secrets.CI_REGION }}
     - name: Upload ECS Cloudformation Template
       uses: jakejarvis/s3-sync-action@master
       with:
