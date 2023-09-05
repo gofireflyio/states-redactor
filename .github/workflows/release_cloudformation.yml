@@ -6,7 +6,7 @@ jobs:
     env:
       S3_BUCKET_CLI: infralight-templates-public
     name: "Cloudformation Templates Release"
-    environment: ${{ inputs.environment }}
+    environment: prod
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
