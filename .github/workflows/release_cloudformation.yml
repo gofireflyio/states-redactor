@@ -17,7 +17,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
         aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
-        aws-region: ${{ secrets.CI_REGION }}
+        aws-region: ${{ env.AWS_REGION }}
     - name: Upload ECS Cloudformation Template
       uses: jakejarvis/s3-sync-action@master
       with:
