@@ -5,7 +5,6 @@ jobs:
   CI:
     env:
       S3_BUCKET_CLI: infralight-templates-public
-      AWS_REGION: us-east-1
     name: "Cloudformation Templates Release"
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-latest
@@ -17,7 +16,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
         aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
-        aws-region: ${{ env.AWS_REGION }}
+        aws-region: ${{ secrets.CI_REGION }}
     - name: Upload ECS Cloudformation Template
       uses: jakejarvis/s3-sync-action@master
       with:
