@@ -1,0 +1,307 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Translation of Terraform to CloudFormation
+
+Parameters:
+  fireflyCrawlerId:
+    Description: "The crawler id in Firefly."
+    Type: "String"
+    MinLength: "24"
+    MaxLength: "24"
+    Default: "5fd10e3b28d3d44392e27068"
+
+  fireflyAccountId:
+    Description: "The account id in Firefly."
+    Type: String
+    MinLength: "24"
+    Default: "123456781234567812345678"
+
+  uniqueId:
+    Description: "Unique id for the stack (should be the last 4 letters of the fireflyCrawlerId)."
+    Type: "String"
+    MinLength: "4"
+    MaxLength: "4"
+    Default: "5678"
+
+  imageUri:
+    Description: "The URL of the image to run."
+    Type: String
+    Default: "094724549126.dkr.ecr.us-east-1.amazonaws.com/firefly-states-redactor"
+
+  containerMemory:
+    Description: "Container Memory"
+    Type: Number
+    Default: "512"
+
+  containerCpu:
+    Description: "Container CPU"
+    Type: Number
+    Default: "256"
+
+  redactedBucketName:
+    Description: "The name of the bucket where the redacted states will be written to."
+    Type: String
+
+  sourceBucketName:
+    Description: "The name of the bucket where the original states are."
+    Type: String
+
+  sourceBucketRegion:
+    Description: "The region of the bucket where the original states are."
+    Type: String
+
+  fireflyRemoteLogHash:
+    Description: "The hash for sending remote logs to Firefly. If empty, no logs will be sent to Firefly."
+    Type: String
+    Default: ""
+
+  imageVersion:
+    Description: "The version of the image to run."
+    Type: String
+    Default: "latest"
+
+  scheduleExpression:
+    Description: "The CloudWatch Events schedule expression for the task."
+    Type: String
+    Default: "rate(2 hours)"
+
+  securityGroups:
+    Description: "A list of security group IDs to apply to an AWS resource."
+    Type: CommaDelimitedList
+
+  subnets:
+    Description: "A list of subnet IDs to launch an AWS resource in."
+    Type: CommaDelimitedList
+
+  assignPublicIp:
+    Description: "Should the ECS task have public ip (for getting the remote ECR). If assigned to DISABLED, you should add VPC endpoint to ECR."
+    Type: String
+    AllowedValues:
+      - "ENABLED"
+      - "DISABLED"
+    Default: "DISABLED"
+
+  ecsClusterArn:
+    Description: "If ECS cluster already exists, use this one, otherwise if empty, create the cluster."
+    Type: String
+    Default: ""
+
+  cloudWatchLogGroupName:
+    Description: "In case of blocking the shipment of remote logs to Firefly. We will save the logs to a local cloud watch group."
+    Type: String
+    Default: "firefly-on-prem-redactor"
+
+  cloudwatchStreamPrefix:
+    Description: "In case of blocking the shipment of remote logs to Firefly. We will save the logs to a local cloud watch group with that prefix."
+    Type: String
+    Default: "firefly"
+
+  cloudwatchShouldCreateLogGroup:
+    Description: "In case of blocking the shipment of remote logs to Firefly. We will save the logs to a local cloud watch group. This vairable meant for creating or using an exist group."
+    Type: String
+    AllowedValues:
+      - "true"
+      - "false"
+    Default: "true"
+
+  fireflyPrefix:
+    Description: "the value of fireflyPrefix"
+    Type: String
+    Default: "firefly-states-redactor"
+
+Conditions:
+  ShouldCreateECSCluster:
+    Fn::Equals:
+      - !Ref ecsClusterArn
+      - ""
+
+  FireflyRemoteLogHashEmpty: !Equals [!Ref fireflyRemoteLogHash, ""]
+
+Resources:
+  ECSCluster:
+    Type: 'AWS::ECS::Cluster'
+    Condition: ShouldCreateECSCluster
+    Properties:
+      ClusterName: !Ref fireflyPrefix
+
+  ECSTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName:
+        !Sub "${fireflyPrefix}-${uniqueId}-ecs-task-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "ecs-tasks.amazonaws.com"
+            Action: "sts:AssumeRole"
+
+  ECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName:
+        !Sub "${fireflyPrefix}-${uniqueId}-ecs-task-execution-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Principal:
+            Service: "ecs-tasks.amazonaws.com"
+          Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+
+  ECSTaskPolicySourceBucket:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName:
+        !Sub "${fireflyPrefix}-${uniqueId}-ecs-task-policy-source-bucket"
+      Roles:
+        - !Ref ECSTaskRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action:
+              - "s3:GetObject"
+              - "s3:ListBucket"
+              - "s3:GetBucketLocation"
+            Resource:
+              - !Sub "arn:aws:s3:::${sourceBucketName}"
+              - !Sub "arn:aws:s3:::${sourceBucketName}/*tfstate"
+
+  ECSTaskPolicyRedactedBucket:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName:
+        !Sub "${fireflyPrefix}-${uniqueId}-ecs-task-policy-redacted-bucket"
+      Roles:
+        - !Ref ECSTaskRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action:
+              - "s3:GetObject"
+              - "s3:PutObject"
+              - "s3:GetObjectVersion"
+              - "s3:DeleteObject"
+              - "s3:ListBucket"
+              - "s3:GetBucketLocation"
+            Resource:
+              - !Sub "arn:aws:s3:::${redactedBucketName}"
+              - !Sub "arn:aws:s3:::${redactedBucketName}/*tfstate"
+              - !Sub "arn:aws:s3:::${redactedBucketName}/*jsonl"
+
+  RedactorLogsPolicy:
+    Type: AWS::IAM::Policy
+    Condition: FireflyRemoteLogHashEmpty
+    Properties:
+      PolicyName: !Sub "${fireflyPrefix}-${uniqueId}-redactor-logs-policy"
+      Roles:
+       - !Ref ECSTaskExecutionRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action:
+              - "logs:*"
+            Resource:
+              - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${cloudWatchLogGroupName}*"
+
+  ECSEventsRuleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${fireflyPrefix}-${uniqueId}-ecs-events-rule-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action: "sts:AssumeRole"
+            Principal:
+              Service: "events.amazonaws.com"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceEventsRole"
+
+  ECSTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub "${fireflyPrefix}-${uniqueId}"
+      Cpu: !Ref containerCpu
+      Memory: !Ref containerMemory
+      ContainerDefinitions:
+        - Name: !Sub "${fireflyPrefix}-${uniqueId}"
+          Image: !Join [":", [!Ref imageUri, !Ref imageVersion]]
+          Environment:
+            - Name: "FIREFLY_ACCOUNT_ID"
+              Value: !Ref fireflyAccountId
+            - Name: "FIREFLY_CRAWLER_ID"
+              Value: !Ref fireflyCrawlerId
+            - Name: "SAAS_MODE"
+              Value: "false"
+            - Name: "STATES_BUCKET"
+              Value: !Ref redactedBucketName
+            - Name: "AWS_REGION"
+              Value: !Ref AWS::Region
+            - Name: "REMOTE_LOG_HASH"
+              Value: !Ref fireflyRemoteLogHash
+            - Name: "LOCAL_CRAWLER_JSON"
+              Value: !Sub '{"_id" : "${fireflyCrawlerId}", "accountId" : "${fireflyAccountId}", "location" : { "s3" : { "isLocal" : true, "bucket" : "${sourceBucketName}", "region" : "${AWS::Region}" }}, "type" : "s3", "active" : true, "fullMapInterval" : 86400000000000,"isAutoCreated" : true,"isLocal" : true,"mainLocation" : "${sourceBucketName}"}'
+          LogConfiguration:
+            !If
+              - FireflyRemoteLogHashEmpty
+              - LogDriver: "awslogs"
+                Options:
+                  awslogs-group: !Ref cloudWatchLogGroupName
+                  awslogs-region: !Ref AWS::Region
+                  awslogs-create-group: !Ref cloudwatchShouldCreateLogGroup
+                  awslogs-stream-prefix: !Ref cloudwatchStreamPrefix
+              - AWS::NoValue
+      NetworkMode: "awsvpc"
+      TaskRoleArn: !Ref ECSTaskRole
+      ExecutionRoleArn: !Ref ECSTaskExecutionRole
+      RequiresCompatibilities:
+        - "FARGATE"
+
+  ECSTaskScheduleEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "${fireflyPrefix}-${uniqueId}-ecs-task-schedule"
+      Description: "Scheduled task for ECS"
+      ScheduleExpression: !Ref scheduleExpression
+      State: ENABLED
+      Targets:
+        - Arn: !If
+            - ShouldCreateECSCluster
+            - !GetAtt
+              - ECSCluster
+              - Arn
+            - !Ref ecsClusterArn
+          Id: !Sub "${fireflyPrefix}-${uniqueId}-ecs-task-schedule"
+          RoleArn: !GetAtt
+            - ECSEventsRuleRole
+            - Arn
+          EcsParameters:
+            TaskCount: 1
+            TaskDefinitionArn: !Ref ECSTaskDefinition
+            LaunchType: "FARGATE"
+            PlatformVersion: "LATEST"
+            NetworkConfiguration:
+              AwsVpcConfiguration:
+                AssignPublicIp: !Ref assignPublicIp
+                SecurityGroups: !Ref securityGroups
+                Subnets: !Ref subnets
+
+Outputs:
+  ClusterArn:
+    Description: "ARN of the ECS Cluster"
+    Value:
+      !If
+        - ShouldCreateECSCluster
+        - !Ref ECSCluster
+        - !Ref ecsClusterArn
+
+  TaskDefinitionArn:
+    Description: "ARN of the ECS Task Definition"
+    Value:
+      !Ref ECSTaskDefinition
