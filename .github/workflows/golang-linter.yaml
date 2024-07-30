@@ -22,5 +22,5 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: v1.56.0
-          args: --timeout 15m -- $(go work edit -json | jq -c -r '[.Use[].DiskPath] | map_values(. + "/...")[]')
+          args: --timeout 15m -- $(find . -type f -name "go.work" | grep . > /dev/null && go work edit -json | jq -c -r '[.Use[].DiskPath] | map_values(. + "/...")[]' || echo)
           only-new-issues: true
