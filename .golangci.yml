@@ -1,4 +1,7 @@
 linters-settings:
+  errcheck:
+    exclude-functions:
+      - (*github.com/infralight/go-kit/flycontext.Error).Msg
   depguard:
     rules:
       logger:
@@ -62,24 +65,24 @@ linters:
     - gocyclo
     - gofmt
     - goimports
-    - gomnd
+    - mnd
     #    - goprintffuncname
-    #    - gosec
+    - gosec
     #    - gosimple
     - govet
     - ineffassign
     - lll
     - misspell
     #    - nakedret
-    #    - noctx
+    - noctx
     #    - nolintlint
     #    - revive
-    #    - staticcheck
+    - staticcheck
     #    - stylecheck
     #    - testifylint
     - unconvert
-  #    - unparam
-  #    - unused
+    - unparam
+    - unused
   #    - whitespace
 
 
