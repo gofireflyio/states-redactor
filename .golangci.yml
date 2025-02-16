@@ -26,7 +26,7 @@ linters-settings:
     min-occurrences: 3
   goimports:
     local-prefixes: github.com/infralight
-  gomnd:
+  mnd:
     ignored-functions:
       - strings.SplitN
   govet:
