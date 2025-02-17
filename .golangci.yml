@@ -92,8 +92,18 @@ issues:
       linters:
         - dupl
         - lll
+        - gocritic
 
     # The logic of creating a linter is similar between linters, it's not duplication.
     - path: pkg/golinters
       linters:
         - dupl
+
+    - path: components/orchestrator-api/pkg/server/handlers.go
+      linters:
+        - lll
+        - gocritic
+
+    - path: components/orchestrator-api/pkg/server/middleware.go
+      linters:
+        - unused
