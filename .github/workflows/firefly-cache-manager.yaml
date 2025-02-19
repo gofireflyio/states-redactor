@@ -1,13 +1,21 @@
 name: FIREFLY-CACHE-MANAGER
+run-name: FIREFLY-CACHE-MANAGER ${{ inputs.app-name != '' && inputs.app-name != '*' && format(' => {0}', inputs.app-name) || '' }}
 
 on:
   workflow_dispatch:
     inputs:
       branch:
         type: string
-        description: 'Branch name.'
-        default: main
-        required: true
+        description: 'branch'
+        default: 'main'
+      app-name:
+        type: string
+        description: 'app-name'
+        default: '*'
+      go-version:
+        type: string
+        description: 'go-version'
+        default: '1.23'
   schedule:
     - cron: "36 4 * * *"
 
@@ -16,5 +24,7 @@ jobs:
     uses: infralight/.github/.github/workflows/golang-cache-manager.yaml@10xx
     with:
       branch: ${{ inputs.branch || 'main' }}
+      app-name: ${{ inputs.app-name || '*' }}
+      go-version: ${{ inputs.go-version || '1.23' }}
     secrets:
       GLOBAL_PAT: ${{ secrets.GLOBAL_PAT }}
