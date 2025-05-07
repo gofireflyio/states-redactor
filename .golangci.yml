@@ -6,15 +6,10 @@ linters-settings:
     rules:
       logger:
         deny:
-          # logging is allowed only by logutils.Log,
           - pkg: "github.com/sirupsen/logrus"
-            desc: logging is allowed only by logutils.Log.
           - pkg: "github.com/pkg/errors"
-            desc: Should be replaced by standard lib errors package.
           - pkg: "github.com/instana/testify"
-            desc: It's a fork of github.com/stretchr/testify.
         files:
-          # logrus is allowed to use only in logutils package.
           - "!**/pkg/logutils/**.go"
   dupl:
     threshold: 100
@@ -48,6 +43,12 @@ linters-settings:
     locale: US
     ignore-words:
       - "importas" # linter name
+  gocritic:
+    enabled-checks:
+      - ifElseChain
+    settings:
+      ifElseChain:
+        minThreshold: 1  # Flag any use of else
 linters:
   disable-all: true
   enable:
@@ -59,7 +60,7 @@ linters:
     - errorlint
     - funlen
     - gocheckcompilerdirectives
-    #    - gochecknoinits
+    - gochecknoinits
     - goconst
     - gocritic
     - gocyclo
@@ -75,7 +76,7 @@ linters:
     - misspell
     #    - nakedret
     - noctx
-    #    - nolintlint
+    # - nolintlint
     #    - revive
     - staticcheck
     #    - stylecheck
