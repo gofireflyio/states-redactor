@@ -15,16 +15,16 @@ on:
       go-version:
         type: string
         description: 'go-version'
-        default: '1.23'
+        default: '1.24.2'
   schedule:
     - cron: "36 4 * * *"
 
 jobs:
   call-build-cache:
-    uses: infralight/.github/.github/workflows/golang-cache-manager.yaml@10xx
+    uses: infralight/.github/.github/workflows/golang-cache-manager.yaml@master
     with:
       branch: ${{ inputs.branch || 'main' }}
       app-name: ${{ inputs.app-name || '*' }}
-      go-version: ${{ inputs.go-version || '1.23' }}
+      go-version: ${{ inputs.go-version || '1.24.2' }}
     secrets:
       GLOBAL_PAT: ${{ secrets.GLOBAL_PAT }}
