@@ -31,7 +31,9 @@ The redaction is for the following terraform providers (`Sensitive` attributes):
 **In any case**, the redactor uses [Gitleaks](https://github.com/zricethezav/gitleaks) on every resource in order to enhance and make sure no secrets being written to mirror S3 bucket.
 
 ## Architecture
-<img width="721" alt="image" src="https://github.com/user-attachments/assets/f7b12939-782e-459c-beb8-8cd257f9d7e0">
+<img width="721" alt="image" src="https://github.com/user-attachments/assets/1a6c9195-731f-47ee-90e8-f9e6b696e66d">
+
+
 
 The CronJob runs every 2 hours by default. The CronJob is designed to run on an EKS cluster since it relays on the `eks.amazonaws.com/role-arn` annotation. The role must have an OpenID trust relationship and must grant:
 * s3:GetBucket - for target bucket
