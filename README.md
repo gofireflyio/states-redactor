@@ -50,7 +50,30 @@ helm repo add firefly-redactor https://gofireflyio.github.io/states-redactor
 helm install states-redactor firefly-redactor/firefly-redactor -f values.yaml --namespace=firefly --create-namespace
 ```
 
-An example of `values.yaml`:
+An example of `values.yaml` for S3 bucket:
+```yaml
+serviceAccount:
+  annotations: {
+     "gofirefly.io/component": firefly-redactor,
+     "eks.amazonaws.com/role-arn": aws:aws:iam::123456789:role/my-role
+  }
+firefly:
+  accountId: GIVEN-BY-FIREFLY
+  crawlerId: GIVEN-BY-FIREFLY
+  location:
+    s3:
+     isLocal: true
+     bucket: my-bucket
+     region: us-east-1
+  type: s3
+
+redactorMirrorBucketName: my-mirror-bucket
+redactorMirrorBucketRegion: us-east-1
+logging:
+  remoteHash: GIVEN-BY-FIREFLY
+```
+
+An example of `values.yaml` for Terraform Cloud:
 ```yaml
 serviceAccount:
   annotations: {
