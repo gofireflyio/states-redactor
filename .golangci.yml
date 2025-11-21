@@ -11,6 +11,9 @@ linters-settings:
           - pkg: "github.com/instana/testify"
         files:
           - "!**/pkg/logutils/**.go"
+      aws-sdk-v1:
+        deny:
+          - pkg: "github.com/aws/aws-sdk-go"
   dupl:
     threshold: 100
   funlen:
