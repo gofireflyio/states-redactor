@@ -16,13 +16,19 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.25.0'
       - name: Configure git for private modules
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - name: Setup Go environment
+        run: |
+          go env -w GOPROXY=https://proxy.golang.org,direct
+          go env -w GOSUMDB=sum.golang.org
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.61.0
+          version: v1.64.6
+          install-mode: goinstall
+          github-token: ${{ secrets.GLOBAL_PAT }}
           args: --timeout=20m -- $(find . -type f -name "go.work" | grep . > /dev/null && go work edit -json | jq -c -r '[.Use[].DiskPath] | map_values(. + "/...")[]' || echo)
           only-new-issues: true
           skip-save-cache: true
