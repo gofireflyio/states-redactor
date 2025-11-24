@@ -15,20 +15,62 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        id: setup_go_detect
+        with:
+          go-version: '1.23'
+      - name: Detect Go version
+        id: go_version
+        run: |
+          GO_VERSION="1.23"
+          if [ -f go.work ]; then
+            WORK_VERSION=$(go work edit -json 2>/dev/null | jq -r '.Go // empty' 2>/dev/null || echo "")
+            if [ -n "$WORK_VERSION" ] && [ "$WORK_VERSION" != "null" ]; then
+              GO_VERSION="$WORK_VERSION"
+            else
+              GO_VERSION=$(grep -E '^go [0-9]+\.[0-9]+' go.work 2>/dev/null | head -1 | awk '{print $2}' || echo "1.23")
+            fi
+          elif [ -f go.mod ]; then
+            GO_VERSION=$(grep -E '^go [0-9]+\.[0-9]+' go.mod 2>/dev/null | head -1 | awk '{print $2}' || echo "1.23")
+          fi
+          echo "detected=$GO_VERSION" >> $GITHUB_OUTPUT
+          MAJOR=$(echo $GO_VERSION | cut -d. -f1)
+          MINOR=$(echo $GO_VERSION | cut -d. -f2)
+          if [ "$MAJOR" -gt 1 ] || ([ "$MAJOR" -eq 1 ] && [ "$MINOR" -ge 25 ]); then
+            echo "use_new_version=true" >> $GITHUB_OUTPUT
+            echo "go_version=1.25.0" >> $GITHUB_OUTPUT
+            echo "golangci_version=v1.64.6" >> $GITHUB_OUTPUT
+          else
+            echo "use_new_version=false" >> $GITHUB_OUTPUT
+            echo "go_version=1.23" >> $GITHUB_OUTPUT
+            echo "golangci_version=v1.61.0" >> $GITHUB_OUTPUT
+          fi
+      - uses: actions/setup-go@v5
+        if: steps.go_version.outputs.go_version == '1.25.0'
         with:
           go-version: '1.25.0'
       - name: Configure git for private modules
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
       - name: Setup Go environment
+        if: steps.go_version.outputs.use_new_version == 'true'
         run: |
           go env -w GOPROXY=https://proxy.golang.org,direct
           go env -w GOSUMDB=sum.golang.org
-      - name: golangci-lint
+      - name: golangci-lint (Go 1.25+)
+        if: steps.go_version.outputs.use_new_version == 'true'
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.64.6
+          version: ${{ steps.go_version.outputs.golangci_version }}
           install-mode: goinstall
           github-token: ${{ secrets.GLOBAL_PAT }}
+          args: --timeout=20m -- $(find . -type f -name "go.work" | grep . > /dev/null && go work edit -json | jq -c -r '[.Use[].DiskPath] | map_values(. + "/...")[]' || echo)
+          only-new-issues: true
+          skip-save-cache: true
+          skip-cache: true
+      - name: golangci-lint (Go < 1.25)
+        if: steps.go_version.outputs.use_new_version != 'true'
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: ${{ steps.go_version.outputs.golangci_version }}
           args: --timeout=20m -- $(find . -type f -name "go.work" | grep . > /dev/null && go work edit -json | jq -c -r '[.Use[].DiskPath] | map_values(. + "/...")[]' || echo)
           only-new-issues: true
           skip-save-cache: true
