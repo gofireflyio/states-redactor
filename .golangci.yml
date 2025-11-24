@@ -12,8 +12,11 @@ linters-settings:
         files:
           - "!**/pkg/logutils/**.go"
       aws-sdk-v1:
+        list-mode: lax
         deny:
           - pkg: "github.com/aws/aws-sdk-go"
+        allow:
+          - "github.com/aws/aws-sdk-go-v2"
   dupl:
     threshold: 100
   funlen:
