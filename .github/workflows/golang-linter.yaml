@@ -39,9 +39,13 @@ jobs:
           echo "detected=$GO_VERSION" >> $GITHUB_OUTPUT
           MAJOR=$(echo $GO_VERSION | cut -d. -f1)
           MINOR=$(echo $GO_VERSION | cut -d. -f2)
-          if [ "$MAJOR" -gt 1 ] || ([ "$MAJOR" -eq 1 ] && [ "$MINOR" -ge 25 ]); then
+          if [ "$MAJOR" -gt 1 ] || ([ "$MAJOR" -eq 1 ] && [ "$MINOR" -ge 24 ]); then
             echo "use_new_version=true" >> $GITHUB_OUTPUT
-            echo "go_version=1.25.0" >> $GITHUB_OUTPUT
+            if [ "$MAJOR" -gt 1 ] || ([ "$MAJOR" -eq 1 ] && [ "$MINOR" -ge 25 ]); then
+              echo "go_version=1.25.0" >> $GITHUB_OUTPUT
+            else
+              echo "go_version=1.24.0" >> $GITHUB_OUTPUT
+            fi
             echo "golangci_version=v1.64.6" >> $GITHUB_OUTPUT
           else
             echo "use_new_version=false" >> $GITHUB_OUTPUT
@@ -49,9 +53,9 @@ jobs:
             echo "golangci_version=v1.61.0" >> $GITHUB_OUTPUT
           fi
       - uses: actions/setup-go@v5
-        if: steps.go_version.outputs.go_version == '1.25.0'
+        if: steps.go_version.outputs.use_new_version == 'true'
         with:
-          go-version: '1.25.0'
+          go-version: ${{ steps.go_version.outputs.go_version }}
       - name: Configure git for private modules
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
       - name: Setup Go environment
@@ -59,7 +63,7 @@ jobs:
         run: |
           go env -w GOPROXY=https://proxy.golang.org,direct
           go env -w GOSUMDB=sum.golang.org
-      - name: golangci-lint (Go 1.25+)
+      - name: golangci-lint (Go 1.24+)
         if: steps.go_version.outputs.use_new_version == 'true'
         uses: golangci/golangci-lint-action@v6
         with:
@@ -70,7 +74,7 @@ jobs:
           only-new-issues: true
           skip-save-cache: true
           skip-cache: true
-      - name: golangci-lint (Go < 1.25)
+      - name: golangci-lint (Go < 1.24)
         if: steps.go_version.outputs.use_new_version != 'true'
         uses: golangci/golangci-lint-action@v6
         with:
