@@ -21,7 +21,7 @@ jobs:
       - name: Bump version and push tag
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: tag_version
-        uses: mathieudutour/github-tag-action@v6.0
+        uses: mathieudutour/github-tag-action@06382dcd483ebaea54d37e40ad576658a6c6ef73 # v6.0
         with:
           release_branches: main
           github_token: ${{ github.token }}
@@ -36,7 +36,7 @@ jobs:
       - name: Bump beta version and push tag
         if: github.event_name == 'workflow_dispatch'
         id: tag_version_branch
-        uses: mathieudutour/github-tag-action@v6.0
+        uses: mathieudutour/github-tag-action@06382dcd483ebaea54d37e40ad576658a6c6ef73 # v6.0
         with:
           pre_release_branches: .*
           github_token: ${{ github.token }}
