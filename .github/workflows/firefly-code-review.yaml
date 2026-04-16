@@ -1,0 +1,33 @@
+name: Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: opencode-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    if: "!github.event.pull_request.draft"
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.PR_GITHUB_APP_ID }}
+          private-key: ${{ secrets.PR_GITHUB_APP_SECRET }}
+
+      - uses: infralight/developer-handbook/github@main
+        with:
+          google_credentials: ${{ secrets.VERTEX_SERVICE_ACCOUNT_KEY }}
+          github_token: ${{ steps.app-token.outputs.token }}
+          gcp_project: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
