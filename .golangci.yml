@@ -1,62 +1,6 @@
-linters-settings:
-  errcheck:
-    exclude-functions:
-      - (*github.com/infralight/go-kit/flycontext.Error).Msg
-  depguard:
-    rules:
-      logger:
-        deny:
-          - pkg: "github.com/sirupsen/logrus"
-          - pkg: "github.com/pkg/errors"
-          - pkg: "github.com/instana/testify"
-        files:
-          - "!**/pkg/logutils/**.go"
-      aws-sdk-v1:
-        list-mode: lax
-        deny:
-          - pkg: "github.com/aws/aws-sdk-go"
-        allow:
-          - "github.com/aws/aws-sdk-go-v2"
-  dupl:
-    threshold: 100
-  funlen:
-    lines: -1 # the number of lines (code + empty lines) is not a right metric and leads to code without empty line or one-liner.
-    statements: 50
-  goconst:
-    min-len: 2
-    min-occurrences: 3
-  goimports:
-    local-prefixes: github.com/infralight
-  mnd:
-    ignored-functions:
-      - strings.SplitN
-  govet:
-    settings:
-      printf:
-        funcs:
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
-    enable:
-      - nilness
-      - shadow
-  errorlint:
-    asserts: false
-  lll:
-    line-length: 140
-  misspell:
-    locale: US
-    ignore-words:
-      - "importas" # linter name
-  gocritic:
-    enabled-checks:
-      - ifElseChain
-    settings:
-      ifElseChain:
-        minThreshold: 1  # Flag any use of else
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
     - bodyclose
     - depguard
@@ -70,47 +14,110 @@ linters:
     - goconst
     - gocritic
     - gocyclo
-    - gofmt
-    - goimports
-    - mnd
-    #    - goprintffuncname
     - gosec
-    #    - gosimple
     - govet
     - ineffassign
     - lll
     - misspell
-    #    - nakedret
+    - mnd
     - noctx
-    # - nolintlint
-    #    - revive
     - staticcheck
-    #    - stylecheck
-    #    - testifylint
     - unconvert
     - unparam
     - unused
-  #    - whitespace
-
-
-issues:
-  exclude-rules:
-    - path: (.+)_test\.go
-      linters:
-        - dupl
-        - lll
-        - gocritic
-
-    # The logic of creating a linter is similar between linters, it's not duplication.
-    - path: pkg/golinters
-      linters:
-        - dupl
-
-    - path: components/orchestrator-api/pkg/server/handlers.go
-      linters:
-        - lll
-        - gocritic
-
-    - path: components/orchestrator-api/pkg/server/middleware.go
-      linters:
-        - unused
+  settings:
+    depguard:
+      rules:
+        aws-sdk-v1:
+          list-mode: lax
+          allow:
+            - github.com/aws/aws-sdk-go-v2
+          deny:
+            - pkg: github.com/aws/aws-sdk-go
+        logger:
+          files:
+            - '!**/pkg/logutils/**.go'
+          deny:
+            - pkg: github.com/sirupsen/logrus
+            - pkg: github.com/pkg/errors
+            - pkg: github.com/instana/testify
+    dupl:
+      threshold: 100
+    errcheck:
+      exclude-functions:
+        - (*github.com/infralight/go-kit/flycontext.Error).Msg
+    errorlint:
+      asserts: false
+    funlen:
+      lines: -1
+      statements: 50
+    goconst:
+      min-len: 2
+      min-occurrences: 3
+    gocritic:
+      enabled-checks:
+        - ifElseChain
+      settings:
+        ifElseChain:
+          minThreshold: 1
+    govet:
+      enable:
+        - nilness
+        - shadow
+      settings:
+        printf:
+          funcs:
+            - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
+            - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
+            - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
+            - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
+    lll:
+      line-length: 140
+    misspell:
+      locale: US
+      ignore-rules:
+        - importas
+    mnd:
+      ignored-functions:
+        - strings.SplitN
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - dupl
+          - gocritic
+          - lll
+        path: (.+)_test\.go
+      - linters:
+          - dupl
+        path: pkg/golinters
+      - linters:
+          - gocritic
+          - lll
+        path: components/orchestrator-api/pkg/server/handlers.go
+      - linters:
+          - unused
+        path: components/orchestrator-api/pkg/server/middleware.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/infralight
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
